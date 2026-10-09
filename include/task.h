@@ -3,12 +3,9 @@
 
 
 typedef struct {
-    int id;
-    char cor[7]; // # + hexadecimal
-    int ingresso;
-    int duracao;
-    int periodo;
-    int prazo; 
+    int id, ingresso, duracao, periodo, prazo;
+    char cor[6]; // hexadecimal
+    short int estado; // 0 = pronto, 1 = executando, 2 = bloqueado, 3 = finalizado
     // lista_eventos;
 } TaskControlBlock;
 
