@@ -1,40 +1,67 @@
 #include <stdio.h>
-#include <unistd.h>
+#include <stdlib.h>
+#include <string.h>
 #include "../include/simulador.h"
+#include "../include/parser.h"
+#include "../include/gantt.h"
 
-enum modo_execucao{ modo_debug, modo_completo};
 
-int main(int argc, char *argv[]) {
-    /*--- validacoes iniciais ---*/
-    enum modo_execucao modo = modo_completo;
+static void imprimir_uso(const char* prog) {
+    printf("Uso: %s [-c | -d] <arquivo de configuracao>\n", prog);
+}
 
-    if(argc < 2 || argc > 3){
-        printf("Execute no formato: ./main %s <arquivo txt>", argv[0]);
+int main(int argc, char* argv[]) {
+    if (argc != 3) {
+        imprimir_uso(argv[0]);
         return 1;
     }
-    int opt;
-    int flag_c = 0, flag_d = 0;
 
-    while ((opt = getopt(argc, argv, "cd")) != -1) {
-        switch (opt) {
-            case 'c': flag_c = 1; break;
-            case 'd': flag_d = 1; break;
-            default:
-                printf( "Uso: %s [-c | -d]\n", argv[0]);
-                return 1;
+    ModoExecucao modo;
+    const char* arquivo;
+
+    if (strcmp(argv[1], "-c") == 0) {
+        modo = MODO_COMPLETO;
+    } else if (strcmp(argv[1], "-d") == 0) {
+        modo = MODO_DEBUG;
+    } else {
+        imprimir_uso(argv[0]);
+        return 1;
+    }
+    arquivo = argv[2];
+
+    // carrega a configuracao 
+    char msg_erro[256];
+    Configuracao* cfg = carregarConfiguracao(arquivo, msg_erro);
+    if (!cfg) {
+        printf("Erro ao carregar o arquivo de configuracao: %s\n", msg_erro);
+        return 1;
+    }
+
+    int achou_aperiodica = 0;
+    for (int i = 0; i < cfg->qtde_tarefas; i++) {
+        if (cfg->tarefas[i].periodo == 0) {
+            if (!achou_aperiodica) {
+                printf("Aviso: tarefas aperiodicas sao ignoradas no Projeto A.\n");
+                achou_aperiodica = 1;
+            }
+            printf("  Tarefa de id %d ignorada (periodo = 0).\n", cfg->tarefas[i].id);
         }
     }
 
-    if (flag_c && flag_d) {
-        printf("Uso: %s [-c | -d]\n", argv[0]);
+    Simulador sim;
+    if (simulador_iniciar(&sim, cfg) != 0) {
+        printf("Erro ao inicializar o simulador.\n");
+        liberarConfiguracao(cfg);
         return 1;
     }
 
-    
+    if (modo == MODO_COMPLETO) {
+        simulador_executar_completo(&sim);
+    } else {
+        simulador_executar_debug(&sim);
+    }
 
-    if (flag_d) modo = modo_debug;
-
-    abrirArquivoSimulacao(argv[2]);
-
+    simulador_liberar(&sim);
+    liberarConfiguracao(cfg);
     return 0;
 }
