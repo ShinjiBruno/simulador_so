@@ -3,7 +3,7 @@
 #include <string.h>
 #include "../include/simulador.h"
 #include "../include/escalonador.h"
-//#include "../include/gantt.h"
+#include "../include/gantt.h"
 
 
 static void registrar_evento(Simulador* sim, int tick, int id_tarefa, int cpu,
@@ -186,7 +186,7 @@ static void salvar_snapshot(Simulador* sim) {
 
 static int acabou(Simulador* sim) {
     for (int i = 0; i < sim->qtde_tarefas; i++)
-        if (sim->tarefas[i].periodo > 0 && sim->tarefas[i].execucoes < 10)
+        if (/*sim->tarefas[i].periodo > 0 &&*/ sim->tarefas[i].execucoes < 10)
             return 0;
     return 1;
 }
@@ -237,7 +237,7 @@ int simulador_iniciar(Simulador* sim, Configuracao* cfg) {
     sim->qtde_historico = 0;
     sim->cap_historico = 0;
 
-    srand(42); //seed deterministica para reproduzir sorteio
+    srand(4); //seed deterministica para reproduzir sorteio
 
     return 0;
 }
@@ -300,8 +300,8 @@ void simulador_executar_completo(Simulador* sim) {
     }
     printf("\n=== Resultado final da simulacao (modo completo) ===\n");
     relatar_cpus_desligadas(sim);
-    //gantt_exportar_svg(sim, "gantt.svg");
-    //printf("Grafico de Gantt exportado para 'gantt.svg'.\n");
+    gantt_exportar_svg(sim, "gantt.svg");
+    printf("Grafico de Gantt exportado para 'gantt.svg'.\n");
 }
 
 void simulador_executar_debug(Simulador* sim) {
@@ -354,7 +354,7 @@ void simulador_executar_debug(Simulador* sim) {
                 
                 
 
-                printf("T%d [%s] cpu=%d exec=%d rest=%d dl=%d ativ=%d\n",
+                printf("Tarefa id=%d [%s] cpu=%d execucoes=%d restante=%d prazo_absoluto=%d ativacoes=%d\n",
                        t->id, e, t->cpu, t->execucoes, t->restante,
                        t->deadline_abs, t->ativacoes);
             }
@@ -366,9 +366,9 @@ void simulador_executar_debug(Simulador* sim) {
             for (int i = 0; i < sim->qtde_tarefas; i++) {
                 if (sim->tarefas[i].id == id) {
                     TaskControlBlock* t = &sim->tarefas[i];
-                    printf("Tarefa %d: cor=%s ingresso=%d duracao=%d periodo=%d prazo=%d\n",
+                    printf("Tarefa id=%d cor=%s ingresso=%d duracao=%d periodo=%d prazo=%d\n",
                            t->id, t->cor, t->ingresso, t->duracao, t->periodo, t->prazo);
-                    printf("  execucoes=%d ativacoes=%d restante=%d deadline=%d\n",
+                    printf("  execucoes=%d ativacoes=%d restante=%d prazo_absoluto=%d\n",
                            t->execucoes, t->ativacoes, t->restante, t->deadline_abs);
                     achou = 1;
                     break;
@@ -407,14 +407,17 @@ void simulador_executar_debug(Simulador* sim) {
             }
             if (!achou) printf("Tarefa %d nao encontrada.\n", id);
         } else if (strcmp(p, "g") == 0 || strcmp(p, "gantt") == 0) {
-            //todo
+            if (gantt_exportar_svg(sim, "gantt.svg") == 0)
+                printf("Grafico de Gantt exportado para 'gantt.svg'.\n");
+            else
+                printf("Erro ao gerar o grafico de Gantt.\n");
         } else if (strcmp(p, "h") == 0 || strcmp(p, "help") == 0) {
             printf("n/next: avancar 1 tick | p/prev: retroceder 1 tick\n");
             printf("status: estado de todas | info id: detalhes de uma tarefa\n");
             printf("modificar id campo valor | gantt: desenhar | q: sair\n");
         } else if (strcmp(p, "q") == 0 || strcmp(p, "quit") == 0) {
-           // gantt_exportar_svg(sim, "gantt.svg");
-            //printf("Gantt exportado para 'gantt.svg'. Saindo.\n");
+            gantt_exportar_svg(sim, "gantt.svg");
+            printf("Gantt exportado para 'gantt.svg'. Saindo.\n");
             break;
         } else {
             printf("Comando desconhecido '%s'. Digite 'h' para ajuda.\n", p);

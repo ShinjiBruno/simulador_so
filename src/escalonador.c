@@ -55,6 +55,7 @@ static int compara_prioridade(int alg, const TaskControlBlock* a,
     return 0; 
 }
 
+//indice 0 = RM, 1 = EDF
 int escalona(int indice, TaskControlBlock* tarefas, int n, int tick,
              const int* cpu_tarefa, int qtde_cpus, int* sorteio) {
     (void)tick;
