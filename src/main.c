@@ -3,7 +3,7 @@
 #include <string.h>
 #include "../include/simulador.h"
 #include "../include/parser.h"
-#include "../include/gantt.h"
+//#include "../include/gantt.h"
 
 
 static void imprimir_uso(const char* prog) {
@@ -37,14 +37,14 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
+    //avisa caso tiver tarefas aperiodicas
     int achou_aperiodica = 0;
     for (int i = 0; i < cfg->qtde_tarefas; i++) {
         if (cfg->tarefas[i].periodo == 0) {
             if (!achou_aperiodica) {
-                printf("Aviso: tarefas aperiodicas sao ignoradas no Projeto A.\n");
                 achou_aperiodica = 1;
             }
-            printf("  Tarefa de id %d ignorada (periodo = 0).\n", cfg->tarefas[i].id);
+            printf("***** Tarefa de id %d eh aperiodica.*****\n", cfg->tarefas[i].id);
         }
     }
 

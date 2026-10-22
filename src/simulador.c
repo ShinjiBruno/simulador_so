@@ -3,7 +3,7 @@
 #include <string.h>
 #include "../include/simulador.h"
 #include "../include/escalonador.h"
-#include "../include/gantt.h"
+//#include "../include/gantt.h"
 
 
 static void registrar_evento(Simulador* sim, int tick, int id_tarefa, int cpu,
@@ -266,7 +266,7 @@ static void relatar_cpus_desligadas(const Simulador* sim) {
     for (int c = 0; c < ncpu; c++) {
         int inicio = -1;
         int total = 0;
-        printf("CPU %d: ", c);
+        printf("CPU %d ficou desligada nos ticks: ", c);
         int tem_periodo = 0;
         for (int h = 0; h < sim->qtde_historico; h++) {
             int ligada = sim->historico[h]->cpu_ligada[c];
@@ -288,7 +288,7 @@ static void relatar_cpus_desligadas(const Simulador* sim) {
             total += fim - inicio;
         }
         if (total == 0) printf("nunca desligada");
-        else printf(" (%d ticks desligada no total)", total);
+        else printf(" (%d ticks)", total);
         printf("\n");
     }
 }
@@ -300,8 +300,8 @@ void simulador_executar_completo(Simulador* sim) {
     }
     printf("\n=== Resultado final da simulacao (modo completo) ===\n");
     relatar_cpus_desligadas(sim);
-    gantt_exportar_svg(sim, "gantt.svg");
-    printf("Grafico de Gantt exportado para 'gantt.svg'.\n");
+    //gantt_exportar_svg(sim, "gantt.svg");
+    //printf("Grafico de Gantt exportado para 'gantt.svg'.\n");
 }
 
 void simulador_executar_debug(Simulador* sim) {
@@ -342,7 +342,7 @@ void simulador_executar_debug(Simulador* sim) {
                 }
                 sim->acabou = 0;
             } else {
-                printf("Ja no inicio da simulacao.\n");
+                printf("Ja esta no inicio da simulacao.\n");
             }
         } else if (strcmp(p, "s") == 0 || strcmp(p, "status") == 0) {
             for (int i = 0; i < sim->qtde_tarefas; i++) {
@@ -351,6 +351,9 @@ void simulador_executar_debug(Simulador* sim) {
                     (t->estado == TASK_EXECUTANDO) ? "EXECUTANDO" :
                     (t->estado == TASK_BLOQUEADO) ? "BLOQUEADO" :
                     (t->estado == TASK_FINALIZADO) ? "FINALIZADO" : "INATIVO";
+                
+                
+
                 printf("T%d [%s] cpu=%d exec=%d rest=%d dl=%d ativ=%d\n",
                        t->id, e, t->cpu, t->execucoes, t->restante,
                        t->deadline_abs, t->ativacoes);
@@ -410,8 +413,8 @@ void simulador_executar_debug(Simulador* sim) {
             printf("status: estado de todas | info id: detalhes de uma tarefa\n");
             printf("modificar id campo valor | gantt: desenhar | q: sair\n");
         } else if (strcmp(p, "q") == 0 || strcmp(p, "quit") == 0) {
-            gantt_exportar_svg(sim, "gantt.svg");
-            printf("Gantt exportado para 'gantt.svg'. Saindo.\n");
+           // gantt_exportar_svg(sim, "gantt.svg");
+            //printf("Gantt exportado para 'gantt.svg'. Saindo.\n");
             break;
         } else {
             printf("Comando desconhecido '%s'. Digite 'h' para ajuda.\n", p);

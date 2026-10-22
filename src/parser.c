@@ -58,6 +58,7 @@ static int eh_cor_valida(const char* s, char* saida) {
     return 1;
 }
 
+//como usar fgets, fopen e fscan: https://www.cprogressivo.net/2013/11/Como-ler-arquivos-em-C-As-funcoes-fgetc-fscanf-fgets.html
 Configuracao* carregarConfiguracao(const char* caminho, char* msg_erro) {
     FILE* f = fopen(caminho, "r");
     if (!f) {
