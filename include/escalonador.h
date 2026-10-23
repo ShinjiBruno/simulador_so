@@ -5,6 +5,7 @@
 
 #define ALG_RM  0
 #define ALG_EDF 1
+#define ALG_FCFS 2
 
 int algoritmo_para_indice(const char* str);
 

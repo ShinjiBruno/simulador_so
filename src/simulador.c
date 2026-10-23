@@ -237,7 +237,7 @@ int simulador_iniciar(Simulador* sim, Configuracao* cfg) {
     sim->qtde_historico = 0;
     sim->cap_historico = 0;
 
-    srand(4); //seed deterministica para reproduzir sorteio
+    srand(90); //seed deterministica para reproduzir sorteio
 
     return 0;
 }

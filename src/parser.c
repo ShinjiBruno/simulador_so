@@ -113,6 +113,8 @@ Configuracao* carregarConfiguracao(const char* caminho, char* msg_erro) {
                 strcpy(cfg->geral.algoritmo, "RM");
             } else if (strcmp(campos[0], "EDF") == 0) {
                 strcpy(cfg->geral.algoritmo, "EDF");
+            } else if(strcmp(campos[0], "FCFS") == 0) {
+                strcpy(cfg->geral.algoritmo, "FCFS");
             } else {
                 snprintf(msg_erro, 256,
                          "linha %d: algoritmo de escalonamento '%s' desconhecido. "

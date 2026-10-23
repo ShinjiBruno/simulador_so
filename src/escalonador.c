@@ -13,7 +13,9 @@ int algoritmo_para_indice(const char* str) {
     buf[i] = '\0';
 
     if (strcmp(buf, "RM") == 0) return ALG_RM;
-    if (strcmp(buf, "EDF") == 0) return ALG_EDF;
+    if(strcmp(buf, "EDF") == 0) return ALG_EDF;
+    if(strcmp(buf, "FCFS") == 0) return ALG_FCFS;
+
     return -1;
 }
 
@@ -21,6 +23,7 @@ const char* nome_algoritmo(int indice) {
     switch (indice) {
         case ALG_RM:  return "RM";
         case ALG_EDF: return "EDF";
+        case ALG_FCFS: return "FCFS";
         default:      return "?";
     }
 }
@@ -38,10 +41,15 @@ static int compara_prioridade(int alg, const TaskControlBlock* a,
         ka = a->periodo;
         kb = b->periodo;
     } 
-    else { ///EDF 
+    else if(alg == ALG_EDF){ ///EDF 
         ka = a->deadline_abs;
         kb = b->deadline_abs;
     }
+    else if(alg == ALG_FCFS){
+        ka = a->ativacao_abs;
+        kb = b->ativacao_abs;
+    } 
+
     if (ka != kb) return (ka < kb) ? -1 : 1;
 
     if (a->prazo != b->prazo) return (a->prazo < b->prazo) ? -1 : 1;
