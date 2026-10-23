@@ -131,6 +131,8 @@ static void desenhar_legenda(FILE* f, double x0) {
     double x = x0;
     double y1 = 42.0;   /* linha 1 da legenda */
     double y2 = 62.0;   /* linha 2 da legenda */
+    double y3 = 82.0;   /* linha 3 da legenda */
+    double y4 = 102.0;  /* linha 4 da legenda */
     double s = 12.0;    /* tamanho do quadrado de amostra */
     double ty = 0.0;    /* deslocamento do texto para alinhar com a amostra */
 
@@ -148,54 +150,61 @@ static void desenhar_legenda(FILE* f, double x0) {
         "  <rect x=\"%.1f\" y=\"%.1f\" width=\"%.1f\" height=\"%.1f\" fill=\"none\" stroke=\"#999999\" stroke-width=\"1\"/>\n",
         x, y1 - s + 3, s, s);
     fprintf(f, "  <text x=\"%.1f\" y=\"%.1f\" font-size=\"12\">Pronta (na fila)</text>\n", x + s + 6, ty);
-    x += 150;
+    
+    /* linha 2 ------------------------------------------------------------- */
+    x = x0;//x += 150;
 
     /* suspensa / bloqueada */
     fprintf(f,
         "  <rect x=\"%.1f\" y=\"%.1f\" width=\"%.1f\" height=\"%.1f\" fill=\"url(#patBloqueado)\" stroke=\"#000000\" stroke-width=\"1\"/>\n",
-        x, y1 - s + 3, s, s);
+        x, y2 - s + 3, s, s);
+    ty = y2 + 1;
     fprintf(f, "  <text x=\"%.1f\" y=\"%.1f\" font-size=\"12\">Suspensa (bloqueada)</text>\n", x + s + 6, ty);
-    x += 170;
+    x += 230;
 
     /* CPU desligada */
     fprintf(f,
         "  <rect x=\"%.1f\" y=\"%.1f\" width=\"%.1f\" height=\"%.1f\" fill=\"url(#patDesligado)\" stroke=\"#666666\" stroke-width=\"1\"/>\n",
-        x, y1 - s + 3, s, s);
+        x, y2 - s + 3, s, s);
     fprintf(f, "  <text x=\"%.1f\" y=\"%.1f\" font-size=\"12\">CPU desligada</text>\n", x + s + 6, ty);
 
-    /* linha 2 ------------------------------------------------------------- */
+    /* linha 3 ------------------------------------------------------------- */
     x = x0;
     /* chegada: triangulo verde apontando para baixo */
     fprintf(f,
         "  <polygon points=\"%.1f,%.1f %.1f,%.1f %.1f,%.1f\" fill=\"#2e7d32\" stroke=\"#ffffff\" stroke-width=\"1\"/>\n",
-        x + 2, y2 - s + 3, x + s + 2, y2 - s + 3, x + 7, y2 + 3);
-    ty = y2 + 1;
+        x + 2, y3 - s + 3, x + s + 2, y3 - s + 3, x + 7, y3 + 3);
+    ty = y3 + 1;
     fprintf(f, "  <text x=\"%.1f\" y=\"%.1f\" font-size=\"12\">Chegada da tarefa</text>\n", x + s + 10, ty);
-    x += 150;
+    x += 230;
 
     /* termino: triangulo preto apontando para cima */
     fprintf(f,
         "  <polygon points=\"%.1f,%.1f %.1f,%.1f %.1f,%.1f\" fill=\"#000000\" stroke=\"#ffffff\" stroke-width=\"1\"/>\n",
-        x + 2, y2 + 3, x + s + 2, y2 + 3, x + 7, y2 - s + 3);
+        x + 2, y3 + 3, x + s + 2, y3 + 3, x + 7, y3 - s + 3);
     fprintf(f, "  <text x=\"%.1f\" y=\"%.1f\" font-size=\"12\">Termino</text>\n", x + s + 10, ty);
-    x += 110;
+    
+    /* linha 4 ------------------------------------------------------------- */
+    //x += 110;
+    x = x0;
 
     /* prazo perdido: losango vermelho */
     fprintf(f,
         "  <polygon points=\"%.1f,%.1f %.1f,%.1f %.1f,%.1f %.1f,%.1f\" fill=\"#d32f2f\" stroke=\"#ffffff\" stroke-width=\"1\"/>\n",
-        x + 7, y2 - s + 3, x + 7 + 5, y2 - 2, x + 7, y2 + 3, x + 7 - 5, y2 - 2);
+        x + 7, y4 - s + 3, x + 7 + 5, y4 - 2, x + 7, y4 + 3, x + 7 - 5, y4 - 2);
+    ty = y4 + 1;
     fprintf(f, "  <text x=\"%.1f\" y=\"%.1f\" font-size=\"12\">Prazo perdido</text>\n", x + s + 12, ty);
-    x += 130;
+    x += 230;
 
     /* sorteio: circulo ciano */
     fprintf(f, "  <circle cx=\"%.1f\" cy=\"%.1f\" r=\"5\" fill=\"#0288d1\" stroke=\"#ffffff\" stroke-width=\"1\"/>\n",
-        x + 7, y2 - 2);
+        x + 7, y4 - 2);
     fprintf(f, "  <text x=\"%.1f\" y=\"%.1f\" font-size=\"12\">Sorteio (desempate)</text>\n", x + s + 12, ty);
     x += 160;
 
     /* desligamento de CPU: linha vermelha vertical */
     fprintf(f, "  <line x1=\"%.1f\" y1=\"%.1f\" x2=\"%.1f\" y2=\"%.1f\" stroke=\"#d32f2f\" stroke-width=\"2\"/>\n",
-        x + 7, y2 - s + 3, x + 7, y2 + 3);
+        x + 7, y4 - s + 3, x + 7, y4 + 3);
     fprintf(f, "  <text x=\"%.1f\" y=\"%.1f\" font-size=\"12\">CPU desligada (evento)</text>\n", x + s + 12, ty);
 }
 
@@ -285,12 +294,12 @@ int gantt_exportar_svg(const Simulador* sim, const char* caminho) {
     double chart_w = max_tick * cw;
     double row_h = 26.0;               /* altura de uma linha de tarefa */
     double cpu_h = 14.0;               /* altura de uma linha de CPU */
-    double cpu_top = 80.0;             /* topo da faixa de CPUs */
+    double cpu_top = 120.0;             /* topo da faixa de CPUs */
     double task_gap = 10.0;
     double task_top = cpu_top + ncpu * cpu_h + task_gap;
     double task_bottom = task_top + nt * row_h;
     double axis_y = task_bottom + 12.0;
-    double svg_h = axis_y + 34.0;
+    double svg_h = axis_y + 150.0;
 
     double chart_fim = x0 + chart_w + pad_dir;
     double svg_w = chart_fim > 760.0 ? chart_fim : 760.0;
