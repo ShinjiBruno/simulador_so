@@ -24,6 +24,9 @@ typedef struct {
 
 Configuracao* carregarConfiguracao(const char* caminho, char* msg_erro);
 
+//ordena tarefas pelo id
+void quicksort_tarefas(TaskControlBlock* tarefas, int inicio, int fim);
+
 // libera toda a memoria alocada por carregarConfiguracao() 
 void liberarConfiguracao(Configuracao* cfg);
 

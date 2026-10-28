@@ -253,15 +253,8 @@ Configuracao* carregarConfiguracao(const char* caminho, char* msg_erro) {
         return NULL;
     }
 
-    for (int i = 1; i < cfg->qtde_tarefas; i++) {
-        TaskControlBlock chave = cfg->tarefas[i];
-        int j = i - 1;
-        while (j >= 0 && cfg->tarefas[j].id > chave.id) {
-            cfg->tarefas[j + 1] = cfg->tarefas[j];
-            j--;
-        }
-        cfg->tarefas[j + 1] = chave;
-    }
+    //ordena
+    quicksort_tarefas(cfg->tarefas, 0, cfg->qtde_tarefas - 1);
 
     return cfg;
 
@@ -275,4 +268,34 @@ void liberarConfiguracao(Configuracao* cfg) {
     if (!cfg) return;
     free(cfg->tarefas);
     free(cfg);
+}
+
+
+//implementacao do quicksort pra ordenar tarefas pelo id
+void swap(TaskControlBlock *a, TaskControlBlock *b) {
+    TaskControlBlock temp = *a;
+    *a = *b;
+    *b = temp;
+}
+
+int particionar(TaskControlBlock arr[], int baixo, int alto) {
+    int pivo = arr[alto].id; 
+    int i = baixo - 1;
+
+    for (int j = baixo; j < alto; j++) {
+        if (arr[j].id <= pivo) {
+            i++;
+            swap(&arr[i], &arr[j]);
+        }
+    }
+    swap(&arr[i + 1], &arr[alto]);
+    return i + 1;
+}
+
+void quicksort_tarefas(TaskControlBlock tarefas[], int inicio, int fim) {
+    if (inicio < fim) {
+        int p_index = particionar(tarefas, inicio, fim);
+        quicksort_tarefas(tarefas, inicio, p_index - 1);
+        quicksort_tarefas(tarefas, p_index + 1, fim);
+    }
 }

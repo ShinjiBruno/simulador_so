@@ -108,17 +108,19 @@ static void preemptar(Simulador* sim) {
 
     for (int c = 0; c < sim->cfg->geral.qtde_cpus; c++) {
         if (!sim->cpu_ligada[c]) continue;
+
+        //indice da tarefa executando agora na cpu c
         int atual = sim->cpu_tarefa[c];
         if (atual == -1) continue;
 
         int melhor = escalona(alg, sim->tarefas, sim->qtde_tarefas,
                               sim->tick, sim->cpu_tarefa,
                               sim->cfg->geral.qtde_cpus, &sorteio);
-        //so preempta se houver tarefa pronta mais prioritarias que a atual
+        //so preempta se tiver tarefa pronta mais prioritarias que a atual
         if (melhor == -1 || melhor == atual) continue;
-        int cmp = (alg == ALG_RM)
-            ? (sim->tarefas[melhor].periodo < sim->tarefas[atual].periodo)
-            : (sim->tarefas[melhor].deadline_abs < sim->tarefas[atual].deadline_abs);
+
+        int cmp = ccmpara_prioridade_algoritmo(alg, &sim->tarefas[melhor], &sim->tarefas[atual]);
+
         if (cmp) {
             //desaloja atual e coloca melhor
             sim->tarefas[atual].estado = TASK_PRONTO;
@@ -203,10 +205,13 @@ static void restaurar_snapshot(Simulador* sim, SnapshotSistema* s) {
 
 /*---------- exports----------*/
 int simulador_iniciar(Simulador* sim, Configuracao* cfg) {
+    //zerando struct
     memset(sim, 0, sizeof(Simulador));
+
     sim->cfg = cfg;
     sim->qtde_tarefas = cfg->qtde_tarefas;
 
+    //inicializa tarefas
     sim->tarefas = (TaskControlBlock*)malloc(
         sim->qtde_tarefas * sizeof(TaskControlBlock));
     for (int i = 0; i < sim->qtde_tarefas; i++) {
@@ -223,6 +228,7 @@ int simulador_iniciar(Simulador* sim, Configuracao* cfg) {
         sim->tarefas[i].perdeu_prazo = 0;
     }
 
+    // inicializa cpus
     int cpus = cfg->geral.qtde_cpus;
     sim->cpu_tarefa = (int*)malloc(cpus * sizeof(int));
     sim->cpu_ligada = (int*)malloc(cpus * sizeof(int));
@@ -233,12 +239,12 @@ int simulador_iniciar(Simulador* sim, Configuracao* cfg) {
         sim->cpu_desligada_desde[c] = -1;
     }
 
+    sim->prontos = NULL;
     sim->historico = NULL;
     sim->qtde_historico = 0;
     sim->cap_historico = 0;
 
-    srand(90); //seed deterministica para reproduzir sorteio
-
+    srand(time(NULL)); 
     return 0;
 }
 

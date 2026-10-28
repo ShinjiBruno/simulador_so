@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <time.h>
 #include "../include/escalonador.h"
 
 
@@ -36,7 +37,7 @@ static int esta_executando(int i, const int* cpu_tarefa, int qtde_cpus) {
 
 static int compara_prioridade(int alg, const TaskControlBlock* a,
                               const TaskControlBlock* b) {
-    long ka, kb;
+    long ka = 0, kb = 0;
     if (alg == ALG_RM) {
         ka = a->periodo;
         kb = b->periodo;
@@ -50,8 +51,10 @@ static int compara_prioridade(int alg, const TaskControlBlock* a,
         kb = b->ativacao_abs;
     } 
 
+    //primeiro aplicar o algoritmo 
     if (ka != kb) return (ka < kb) ? -1 : 1;
 
+    //depois os criterios de desempate
     if (a->prazo != b->prazo) return (a->prazo < b->prazo) ? -1 : 1;
 
     if (a->ingresso != b->ingresso)
@@ -63,7 +66,8 @@ static int compara_prioridade(int alg, const TaskControlBlock* a,
     return 0; 
 }
 
-//indice 0 = RM, 1 = EDF
+//indice 0 = RM, 1 = EDF, 2 = FCFS
+//retorna o indice da tarefa mais prioritaria entre as prontas. -1 se nao tiger nenhuma
 int escalona(int indice, TaskControlBlock* tarefas, int n, int tick,
              const int* cpu_tarefa, int qtde_cpus, int* sorteio) {
     (void)tick;
@@ -97,4 +101,16 @@ int escalona(int indice, TaskControlBlock* tarefas, int n, int tick,
     }
 
     return melhor;
+}
+
+int ccmpara_prioridade_algoritmo(int alg, TaskControlBlock* melhor, TaskControlBlock* atual){
+    int cmp = -1;
+    if(alg == ALG_RM){
+        cmp = (melhor->periodo < atual->periodo);
+    } else if(alg == ALG_EDF){
+        cmp = (melhor->deadline_abs < atual->deadline_abs);
+    } else if(alg == ALG_FCFS){
+        cmp = (melhor->ativacao_abs < atual->ativacao_abs);
+    }
+    return cmp;
 }

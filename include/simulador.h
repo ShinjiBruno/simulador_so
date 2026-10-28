@@ -3,6 +3,7 @@
 #include "task.h"
 #include "parser.h"
 #include "evento.h"
+#include "../lib/queue/queue.h"
 
 typedef enum {
     MODO_COMPLETO = 0, 
@@ -17,6 +18,7 @@ typedef struct {
 typedef struct {
     int             tick;
     int             qtde_tarefas;
+    QueueNode*      prontos;     
     SnapshotTarefa *snapshots;   // vetor com qtde_tarefas entradas 
     int            *cpu_tarefa;  // tarefa em cada CPU no instante  
     int            *cpu_ligada;  // 1 se a CPU esta ligada          
@@ -29,6 +31,8 @@ typedef struct {
     // tarefas em execucao de simulacao
     TaskControlBlock *tarefas;
     int               qtde_tarefas;
+    //fila de prontos
+    QueueNode*      prontos;    
 
     int *cpu_tarefa;  // indice da tarefa em cada CPU (-1 = livre)
     int *cpu_ligada;  // 1 = ligada, 0 = desligada

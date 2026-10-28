@@ -15,4 +15,6 @@ const char* nome_algoritmo(int indice);
 int escalona(int indice, TaskControlBlock* tarefas, int n, int tick,
              const int* cpu_tarefa, int qtde_cpus, int* sorteio);
 
+int ccmpara_prioridade_algoritmo(int alg, TaskControlBlock* a, TaskControlBlock* b);
+
 #endif

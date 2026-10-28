@@ -154,3 +154,18 @@ fgets(nome, sizeof(nome), stdin); // supunhetamos que o nome seja "Ana\n"
 nome[strcspn(nome, "\n")] = '\0';
 ```
 --- 
+
+### `memset`
+> Biblioteca <string.h>. Usada para preencher um bloco de memória com um valor específico byte a byte. Comumente usada para inicializar arrays, zerar structs ou limpar buffers de forma rápida.
+```c
+//retorna o proprio ponteiro ptr
+void *memset(void *ptr, int value, size_t num);
+```
+---
+
+### `memmove`
+> <string.h>. Usada para copiar um bloco de memória de uma origem para um destino, mesmo que essas duas regiões de memória se sobreponham (overlap).
+```c
+void *memmove(void *dest, const void *src, size_t num);
+```
+
