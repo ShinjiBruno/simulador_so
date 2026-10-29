@@ -1,10 +1,21 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include "../include/simulador.h"
 #include "../include/escalonador.h"
 #include "../include/gantt.h"
 
+int ehHex(char* str) {
+    if (strlen(str) != 6) return 0;
+    for (int i = 0; i < 6; i++) {
+        char c = str[i];
+        if (!((c >= '0' && c <= '9') || (c >= 'A' && c <= 'F') || (c >= 'a' && c <= 'f'))) {
+            return 0;
+        }
+    }
+    return 1;
+}
 
 static void registrar_evento(Simulador* sim, int tick, int id_tarefa, int cpu,
                              TipoEvento tipo) {
@@ -39,8 +50,10 @@ static void ativar_tarefa(Simulador* sim, int i) {
 static void tratar_ativacoes(Simulador* sim) {
     for (int i = 0; i < sim->qtde_tarefas; i++) {
         TaskControlBlock* t = &sim->tarefas[i];
+        //ignorar aperiodicas
         if (t->periodo <= 0) continue; 
 
+        //ignorar tarefas ja completas (fez 10 execucoes)
         if (t->execucoes >= 10) continue;
 
         if (t->estado == TASK_INATIVO && sim->tick >= t->proxima_ativ) {
@@ -52,10 +65,15 @@ static void tratar_ativacoes(Simulador* sim) {
 static void tratar_deadline(Simulador* sim) {
     for (int i = 0; i < sim->qtde_tarefas; i++) {
         TaskControlBlock* t = &sim->tarefas[i];
-        if (t->estado != TASK_FINALIZADO && t->ativacoes > t->execucoes &&
-            t->restante > 0 && !t->perdeu_prazo && sim->tick > t->deadline_abs) {
+        if (t->estado != TASK_FINALIZADO && 
+            t->ativacoes > t->execucoes &&
+            t->restante > 0 && 
+            !t->perdeu_prazo && 
+            sim->tick > t->deadline_abs) {
+
             registrar_evento(sim, sim->tick, i, t->cpu, EVT_DEADLINE);
             t->perdeu_prazo = 1;
+
         }
     }
 }
@@ -372,6 +390,10 @@ void simulador_executar_debug(Simulador* sim) {
             for (int i = 0; i < sim->qtde_tarefas; i++) {
                 if (sim->tarefas[i].id == id) {
                     TaskControlBlock* t = &sim->tarefas[i];
+                    if (!ehHex(t->cor)) {
+                        printf("Cor da tarefa %d invalida.\n", id);
+                        continue;
+                    }
                     printf("Tarefa id=%d cor=%s ingresso=%d duracao=%d periodo=%d prazo=%d\n",
                            t->id, t->cor, t->ingresso, t->duracao, t->periodo, t->prazo);
                     printf("  execucoes=%d ativacoes=%d restante=%d prazo_absoluto=%d\n",
@@ -396,16 +418,36 @@ void simulador_executar_debug(Simulador* sim) {
                 TaskControlBlock* t = &sim->tarefas[i];
                 int v = atoi(valor);
                 if (strcmp(campo, "duracao") == 0) {
-                    if (v <= 0) printf("Erro: duracao deve ser > 0.\n");
-                    else t->duracao = v;
+                    if (v <= 0) {printf("Erro: duracao deve ser > 0.\n"); continue;}
+                    else if(t->corrido > v) printf("Warning: duracao menor que tempo corrido da ativacao atual. Na proxima ativacao o tempo restante sera ajustado.\n");
+                    
+                    t->duracao = v;
+                    t->restante = t->duracao - t->corrido;
                 } else if (strcmp(campo, "periodo") == 0) {
+                    
+                    t->proxima_ativ -= t->periodo; //remove o periodo antigo 
                     t->periodo = v >= 0 ? v : t->periodo;
+                    t->proxima_ativ += t->periodo; //adiciona o novo periodo
+
                 } else if (strcmp(campo, "prazo") == 0) {
+                    
+                    t->deadline_abs -= t->prazo; //remove o prazo antigo
                     t->prazo = v >= 0 ? v : t->prazo;
+                    t->deadline_abs += t->prazo; //adiciona o novo prazo
+
                 } else if (strcmp(campo, "estado") == 0) {
                     if (v < 0 || v > 4) printf("Erro: estado invalido (0=inativo,1=pronto,2=exec,3=bloq,4=fim).\n");
                     else t->estado = v;
-                } else {
+                } else if (strcmp(campo, "id") == 0){
+                    printf("Nao eh permitido alterar o id da tarefa.\n");
+                } else if (strcmp(campo, "cor") == 0) {
+                    if (!ehHex(valor)) {
+                        printf("Cor da tarefa %d invalida.\n", id);
+                        continue;
+                    }
+                    strcpy(t->cor, valor);
+                }
+                else {
                     printf("Campo '%s' nao reconhecido.\n", campo);
                 }
                 achou = 1;
@@ -430,6 +472,7 @@ void simulador_executar_debug(Simulador* sim) {
         }
     }
 }
+
 
 void simulador_liberar(Simulador* sim) {
     free(sim->tarefas);
