@@ -430,14 +430,38 @@ void simulador_executar_debug(Simulador* sim) {
                     t->proxima_ativ += t->periodo; //adiciona o novo periodo
 
                 } else if (strcmp(campo, "prazo") == 0) {
-                    
+
                     t->deadline_abs -= t->prazo; //remove o prazo antigo
                     t->prazo = v >= 0 ? v : t->prazo;
                     t->deadline_abs += t->prazo; //adiciona o novo prazo
 
                 } else if (strcmp(campo, "estado") == 0) {
-                    if (v < 0 || v > 4) printf("Erro: estado invalido (0=inativo,1=pronto,2=exec,3=bloq,4=fim).\n");
-                    else t->estado = v;
+                    
+                    if (v < 0 || v > 4) {printf("Erro: estado invalido (0=inativo,1=pronto,2=exec,3=bloq,4=fim).\n"); continue;}
+                    
+                    if(v != 2){ 
+                        int tarefa_ind = -1;
+                        for(int i = 0; i < sim->cfg->qtde_tarefas; i++){
+                            if(sim->tarefas[i].id == t->id){
+                                tarefa_ind = i;
+                                break;
+                            }
+                        }
+                        if(tarefa_ind == -1){
+                            printf("Erro: tarefa nao encontrada.\n");
+                            continue;
+                        }
+                        for(int i = 0; i < sim->cfg->geral.qtde_cpus; i++){
+                            if(sim->cpu_tarefa[i] == tarefa_ind){
+                                sim->cpu_tarefa[i] = -1;
+                                sim->tarefas[tarefa_ind].cpu = -1;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    t->estado = v;
+
                 } else if (strcmp(campo, "id") == 0){
                     printf("Nao eh permitido alterar o id da tarefa.\n");
                 } else if (strcmp(campo, "cor") == 0) {
