@@ -3,7 +3,11 @@
 #include "task.h"
 #include "parser.h"
 #include "evento.h"
+#include "escalonador.h"
 #include "../lib/queue/queue.h"
+
+#define MAX_EXECUCOES 10
+#define MAX_TICKS 100000
 
 typedef enum {
     MODO_COMPLETO = 0, 
@@ -52,6 +56,8 @@ typedef struct {
     int          cap_eventos;
 
     int sorteio_ultimo_tick;
+
+    OperacoesEscalonador operacoes;
 
 } Simulador;
 

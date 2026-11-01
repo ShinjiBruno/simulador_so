@@ -3,18 +3,36 @@
 
 #include "task.h"
 
-#define ALG_RM  0
-#define ALG_EDF 1
-#define ALG_FCFS 2
+typedef struct OperacoesEscalonador {
+    const char* nome;
+    
+    //int (*escalona)(struct OperacoesEscalonador* self, TaskControlBlock* tarefas, int n, int tick, const int* cpu_tarefa, int qtde_cpus, int* sorteio);
+    
+    //'a é mais prioritaria que 'b'?
+    int (*algoritmo_compara_prioridade)(const TaskControlBlock* a, const TaskControlBlock* b);
+} OperacoesEscalonador;
 
-int algoritmo_para_indice(const char* str);
+typedef enum {
+    ERROR,
+    ALG_RM, 
+    ALG_EDF, 
+    ALG_FCFS
+} Algortimo_Escalonamento;
 
-const char* nome_algoritmo(int indice);
+Algortimo_Escalonamento algoritmo_para_indice(const char* str);
+
+const char* nome_algoritmo(Algortimo_Escalonamento indice);
 
 
-int escalona(int indice, TaskControlBlock* tarefas, int n, int tick,
+int escalona(OperacoesEscalonador operacao, TaskControlBlock* tarefas, int n, int tick,
              const int* cpu_tarefa, int qtde_cpus, int* sorteio);
 
-int ccmpara_prioridade_algoritmo(int alg, TaskControlBlock* a, TaskControlBlock* b);
+int ccmpara_prioridade_algoritmo(Algortimo_Escalonamento alg, TaskControlBlock* a, TaskControlBlock* b);
+
+int compara_prioridadeRM(const TaskControlBlock* a, const TaskControlBlock* b);
+
+int compara_prioridadeEDF(const TaskControlBlock* a, const TaskControlBlock* b);
+
+int compara_prioridadeFCFS(const TaskControlBlock* a, const TaskControlBlock* b);
 
 #endif

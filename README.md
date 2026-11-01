@@ -77,3 +77,10 @@
 	4. No projeto A, a simulação deve suportar somente a execução de tarefas periódicas, sendo que as tarefas aperiódicas serão abordadas no projeto B. Caso exista a indicação de tarefas aperiódicas no projeto A, elas devem ser ignoradas e essa situação deve ser reportada ao usuário de forma clara. Por definição, as tarefas periódicas nunca terminam. No entanto, com objetivo de terminar a simulação, assume-se que uma tarefa periódica termina após ela ter executado 10 vezes.
 
 5. A interface de interação do usuário com o simulador deve ser intuitiva, fácil de entender e usar. Qualquer erro que ocorrer durante o uso do software do simulador deve ser apresentado de forma clara para o usuário indicado o motivo da mensagem de erro ser apresentada.
+
+
+---
+
+Aluno: Bruno Yamamoto
+
+Repo: https://github.com/ShinjiBruno/simulador_so

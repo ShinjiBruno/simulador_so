@@ -316,11 +316,10 @@ int gantt_exportar_svg(const Simulador* sim, const char* caminho) {
     fprintf(f, "  <rect x=\"0\" y=\"0\" width=\"%.1f\" height=\"%.1f\" fill=\"#ffffff\"/>\n", svg_w, svg_h);
 
     /* titulo */
-    int alg = algoritmo_para_indice(sim->cfg->geral.algoritmo);
     fprintf(f,
         "  <text x=\"%.1f\" y=\"22\" font-size=\"16\" font-weight=\"bold\">"
         "Diagrama de Gantt — %s | quantum=%d | CPUs=%d | ticks=%d</text>\n",
-        x0, nome_algoritmo(alg), sim->cfg->geral.quantum, ncpu, max_tick);
+        x0, sim->operacoes.nome, sim->cfg->geral.quantum, ncpu, max_tick);
 
     desenhar_legenda(f, x0);
 

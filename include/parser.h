@@ -11,7 +11,7 @@
 
 // Parametros gerais 
 typedef struct {
-    char algoritmo[8]; // "RM" ou "EDF" 
+    char algoritmo[8];  
     int  quantum;
     int  qtde_cpus;
 } ParametrosGerais;

@@ -5,70 +5,28 @@
 #include "../include/escalonador.h"
 
 
-int algoritmo_para_indice(const char* str) {
-    if (!str) return -1;
-    char buf[16];
-    size_t i = 0;
-    for (; str[i] && i < sizeof(buf) - 1; i++)
-        buf[i] = (char)toupper((unsigned char)str[i]);
-    buf[i] = '\0';
-
-    if (strcmp(buf, "RM") == 0) return ALG_RM;
-    if(strcmp(buf, "EDF") == 0) return ALG_EDF;
-    if(strcmp(buf, "FCFS") == 0) return ALG_FCFS;
-
-    return -1;
-}
-
-const char* nome_algoritmo(int indice) {
-    switch (indice) {
-        case ALG_RM:  return "RM";
-        case ALG_EDF: return "EDF";
-        case ALG_FCFS: return "FCFS";
-        default:      return "?";
-    }
-}
-
 static int esta_executando(int i, const int* cpu_tarefa, int qtde_cpus) {
     for (int c = 0; c < qtde_cpus; c++)
         if (cpu_tarefa[c] == i) return 1;
     return 0;
 }
 
-static int compara_prioridade(int alg, const TaskControlBlock* a,
+static int desempate_prioridade(const TaskControlBlock* a,
                               const TaskControlBlock* b) {
-    long ka = 0, kb = 0;
-    if (alg == ALG_RM) {
-        ka = a->periodo;
-        kb = b->periodo;
-    } 
-    else if(alg == ALG_EDF){ ///EDF 
-        ka = a->deadline_abs;
-        kb = b->deadline_abs;
-    }
-    else if(alg == ALG_FCFS){
-        ka = a->ativacao_abs;
-        kb = b->ativacao_abs;
-    } 
-
-    //primeiro aplicar o algoritmo 
-    if (ka != kb) return (ka < kb) ? -1 : 1;
-
-    //depois os criterios de desempate
-    if (a->prazo != b->prazo) return (a->prazo < b->prazo) ? -1 : 1;
+    //criterios de desempate em ordme
+    if (a->prazo != b->prazo) return (a->prazo < b->prazo);
 
     if (a->ingresso != b->ingresso)
-        return (a->ingresso < b->ingresso) ? -1 : 1;
+        return (a->ingresso < b->ingresso);
 
     if (a->duracao != b->duracao)
-        return (a->duracao < b->duracao) ? -1 : 1;
+        return (a->duracao < b->duracao);
 
-    return 0; 
+    return -1; 
 }
 
-//indice 0 = RM, 1 = EDF, 2 = FCFS
 //retorna o indice da tarefa mais prioritaria entre as prontas. -1 se nao tiger nenhuma
-int escalona(int indice, TaskControlBlock* tarefas, int n, int tick,
+int escalona(OperacoesEscalonador operacao, TaskControlBlock* tarefas, int n, int tick,
              const int* cpu_tarefa, int qtde_cpus, int* sorteio) {
     (void)tick;
     *sorteio = 0;
@@ -77,40 +35,50 @@ int escalona(int indice, TaskControlBlock* tarefas, int n, int tick,
 
     for (int i = 0; i < n; i++) {
         if (tarefas[i].estado != TASK_PRONTO) continue;
-
         if (melhor == -1) {
             melhor = i;
             continue;
         }
 
-        int cmp = compara_prioridade(indice, &tarefas[i], &tarefas[melhor]);
+        int prioridade_algoritmo = operacao.algoritmo_compara_prioridade(&tarefas[i], &tarefas[melhor]);
+        if(prioridade_algoritmo != -1){
+            if(prioridade_algoritmo) melhor = i;
+            continue;
+        } 
 
-        if (cmp == 0) {
-            int i_exec = esta_executando(i, cpu_tarefa, qtde_cpus);
-            int m_exec = esta_executando(melhor, cpu_tarefa, qtde_cpus);
-            if (i_exec != m_exec) {
-                if (i_exec) melhor = i;
-                continue;
-            }
+        //se uma tarefa ta executando imediatamente antes do escalonamento ser acionado
+        int i_exec = esta_executando(i, cpu_tarefa, qtde_cpus);
+        int m_exec = esta_executando(melhor, cpu_tarefa, qtde_cpus);
+        if (i_exec != m_exec) {
+            if (i_exec) melhor = i;
+            continue;
+        }
+
+        int desempate = desempate_prioridade(&tarefas[i], &tarefas[melhor]);
+
+        if(desempate == -1){
             if (rand() % 2 == 0) melhor = i;
             *sorteio = 1;
             continue;
         }
 
-        if (cmp < 0) melhor = i;
+        if (desempate) melhor = i;
     }
 
     return melhor;
 }
 
-int ccmpara_prioridade_algoritmo(int alg, TaskControlBlock* melhor, TaskControlBlock* atual){
-    int cmp = -1;
-    if(alg == ALG_RM){
-        cmp = (melhor->periodo < atual->periodo);
-    } else if(alg == ALG_EDF){
-        cmp = (melhor->deadline_abs < atual->deadline_abs);
-    } else if(alg == ALG_FCFS){
-        cmp = (melhor->ativacao_abs < atual->ativacao_abs);
-    }
-    return cmp;
+int compara_prioridadeRM(const TaskControlBlock* a, const TaskControlBlock* b){
+    if(a->periodo == b->periodo) return -1;
+    return (a->periodo < b->periodo) ;
+}
+
+int compara_prioridadeEDF(const TaskControlBlock* a, const TaskControlBlock* b){
+    if(a->deadline_abs == b->deadline_abs) return -1;
+    return (a->deadline_abs < b->deadline_abs);
+}
+
+int compara_prioridadeFCFS(const TaskControlBlock* a, const TaskControlBlock* b){
+    if(a->ativacao_abs == b->ativacao_abs) return -1;
+    return (a->ativacao_abs < b->ativacao_abs);
 }

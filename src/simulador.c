@@ -54,7 +54,7 @@ static void tratar_ativacoes(Simulador* sim) {
         if (t->periodo <= 0) continue; 
 
         //ignorar tarefas ja completas (fez 10 execucoes)
-        if (t->execucoes >= 10) continue;
+        if (t->execucoes >= MAX_EXECUCOES) continue;
 
         if (t->estado == TASK_INATIVO && sim->tick >= t->proxima_ativ) {
             ativar_tarefa(sim, i);
@@ -79,7 +79,6 @@ static void tratar_deadline(Simulador* sim) {
 }
 
 static void escalonar(Simulador* sim) {
-    int alg = algoritmo_para_indice(sim->cfg->geral.algoritmo);
     int ncpu = sim->cfg->geral.qtde_cpus;
 
     int prontas = 0;
@@ -91,7 +90,7 @@ static void escalonar(Simulador* sim) {
         if (sim->cpu_tarefa[c] != -1) continue; //ocupada
 
         int sorteio = 0;
-        int escolhida = escalona(alg, sim->tarefas, sim->qtde_tarefas,
+        int escolhida = escalona(sim->operacoes, sim->tarefas, sim->qtde_tarefas,
                                  sim->tick, sim->cpu_tarefa, ncpu, &sorteio);
         if (escolhida == -1) {
             // sem tarefa pronta para esta cpu: desligar
@@ -121,7 +120,6 @@ static void escalonar(Simulador* sim) {
 }
 
 static void preemptar(Simulador* sim) {
-    int alg = algoritmo_para_indice(sim->cfg->geral.algoritmo);
     int sorteio = 0;
 
     for (int c = 0; c < sim->cfg->geral.qtde_cpus; c++) {
@@ -131,15 +129,15 @@ static void preemptar(Simulador* sim) {
         int atual = sim->cpu_tarefa[c];
         if (atual == -1) continue;
 
-        int melhor = escalona(alg, sim->tarefas, sim->qtde_tarefas,
+        int melhor = escalona(sim->operacoes, sim->tarefas, sim->qtde_tarefas,
                               sim->tick, sim->cpu_tarefa,
                               sim->cfg->geral.qtde_cpus, &sorteio);
         //so preempta se tiver tarefa pronta mais prioritarias que a atual
         if (melhor == -1 || melhor == atual) continue;
 
-        int cmp = ccmpara_prioridade_algoritmo(alg, &sim->tarefas[melhor], &sim->tarefas[atual]);
-
-        if (cmp) {
+        int cmp = sim->operacoes.algoritmo_compara_prioridade(&sim->tarefas[melhor], &sim->tarefas[atual]);
+        printf("cmp: %d; melhor: %d; atual: %d\n", cmp, melhor, atual);
+        if (cmp && cmp != -1) {
             //desaloja atual e coloca melhor
             sim->tarefas[atual].estado = TASK_PRONTO;
             sim->tarefas[atual].cpu = -1;
@@ -170,7 +168,7 @@ static void executar_um_tick(Simulador* sim) {
             sim->cpu_tarefa[c] = -1;
             t->cpu = -1;
 
-            if (t->execucoes >= 10) {
+            if (t->execucoes >= MAX_EXECUCOES) {
                 t->estado = TASK_FINALIZADO;
             } else {
                 t->estado = TASK_INATIVO; 
@@ -206,7 +204,7 @@ static void salvar_snapshot(Simulador* sim) {
 
 static int acabou(Simulador* sim) {
     for (int i = 0; i < sim->qtde_tarefas; i++)
-        if (/*sim->tarefas[i].periodo > 0 &&*/ sim->tarefas[i].execucoes < 10)
+        if (/*sim->tarefas[i].periodo > 0 &&*/ sim->tarefas[i].execucoes < MAX_EXECUCOES)
             return 0;
     return 1;
 }
@@ -261,6 +259,17 @@ int simulador_iniciar(Simulador* sim, Configuracao* cfg) {
     sim->historico = NULL;
     sim->qtde_historico = 0;
     sim->cap_historico = 0;
+
+    if(strcmp(cfg->geral.algoritmo, "RM") == 0){
+        sim->operacoes.nome = "RM";
+        sim->operacoes.algoritmo_compara_prioridade = compara_prioridadeRM;
+    }else if(strcmp(cfg->geral.algoritmo, "EDF") == 0){
+        sim->operacoes.nome = "EDF";
+        sim->operacoes.algoritmo_compara_prioridade = compara_prioridadeEDF;
+    } else if (strcmp(cfg->geral.algoritmo, "FCFS") == 0){
+        sim->operacoes.nome = "FCFS";
+        sim->operacoes.algoritmo_compara_prioridade = compara_prioridadeFCFS;
+    }
 
     srand(time(NULL)); 
     return 0;
@@ -320,10 +329,11 @@ static void relatar_cpus_desligadas(const Simulador* sim) {
 void simulador_executar_completo(Simulador* sim) {
     while (!sim->acabou) {
         avancar_tick(sim);
-        if (sim->tick > 100000) break;
+        if (sim->tick > MAX_TICKS) break;
     }
     printf("\n=== Resultado final da simulacao (modo completo) ===\n");
     relatar_cpus_desligadas(sim);
+    
     gantt_exportar_svg(sim, "gantt.svg");
     printf("Grafico de Gantt exportado para 'gantt.svg'.\n");
 }
@@ -343,12 +353,13 @@ void simulador_executar_debug(Simulador* sim) {
         char* p = strtok(cmd, " ");
         if (!p) continue;
 
-        if (strcmp(p, "n") == 0 || strcmp(p, "next") == 0) {
+        if(strcmp(p, "n") == 0 || strcmp(p, "next") == 0) {
             if (sim->acabou) {
                 printf("Simulacao ja terminou.\n");
                 continue;
             }
             avancar_tick(sim);
+
         } else if (strcmp(p, "p") == 0 || strcmp(p, "prev") == 0) {
             if (sim->qtde_historico > 1) {
                 sim->qtde_historico--;
