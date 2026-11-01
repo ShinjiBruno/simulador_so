@@ -30,6 +30,8 @@ typedef struct {
     int     ativacao_abs; // instante absoluto da ativacao corrente        
     int     corrido;      // tempo ja executado na ativacao corrente       
     int     perdeu_prazo; // 1 se a ativacao corrente ja perdeu o prazo   
+    int     quantum_cont; // ticks ja consumidos na fatia de tempo atual  
+    int     tempo_fila;   // instante em que entrou (por ultimo) na fila de prontos
 } TaskControlBlock;
 
 #endif

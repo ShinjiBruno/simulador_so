@@ -27,7 +27,7 @@
  * -----------------------------------------------------------------------------
  */
 
-/* Converte uma cor "RRGGBB" (hexadecimal de 6 digitos) nos canais RGB. */
+// Converte uma cor "RRGGBB" (hexadecimal de 6 digitos) nos canais RGB. 
 static void hex_para_rgb(const char* cor6, int* r, int* g, int* b) {
     unsigned int v = (unsigned int)strtoul(cor6, NULL, 16);
     *r = (int)((v >> 16) & 0xFF);
@@ -35,7 +35,7 @@ static void hex_para_rgb(const char* cor6, int* r, int* g, int* b) {
     *b = (int)(v & 0xFF);
 }
 
-/* Monta "#RRGGBB" a partir do campo cor da tarefa. */
+// Monta "#RRGGBB" a partir do campo cor da tarefa.
 static void cor_css(const char* cor6, char* saida) {
     saida[0] = '#';
     memcpy(saida + 1, cor6, 6);
@@ -80,7 +80,8 @@ static double x_tick(int t, double x0, double cw) {
  */
 static double x_evento(int t, TipoEvento tipo, double x0, double cw) {
     double base = x0 + t * cw;
-    if (tipo == EVT_FIM) base += cw;
+    /* termino e preempcao por quantum ocorrem ao fim do tick */
+    if (tipo == EVT_FIM || tipo == EVT_QUANTUM) base += cw;
     return base;
 }
 
@@ -133,6 +134,7 @@ static void desenhar_legenda(FILE* f, double x0) {
     double y2 = 62.0;   /* linha 2 da legenda */
     double y3 = 82.0;   /* linha 3 da legenda */
     double y4 = 102.0;  /* linha 4 da legenda */
+    double y5 = 122.0;  /* linha 5 da legenda */
     double s = 12.0;    /* tamanho do quadrado de amostra */
     double ty = 0.0;    /* deslocamento do texto para alinhar com a amostra */
 
@@ -200,12 +202,21 @@ static void desenhar_legenda(FILE* f, double x0) {
     fprintf(f, "  <circle cx=\"%.1f\" cy=\"%.1f\" r=\"5\" fill=\"#0288d1\" stroke=\"#ffffff\" stroke-width=\"1\"/>\n",
         x + 7, y4 - 2);
     fprintf(f, "  <text x=\"%.1f\" y=\"%.1f\" font-size=\"12\">Sorteio (desempate)</text>\n", x + s + 12, ty);
-    x += 160;
+    
+    /* linha 5 ------------------------------------------------------------- */
+    x = x0;
 
     /* desligamento de CPU: linha vermelha vertical */
     fprintf(f, "  <line x1=\"%.1f\" y1=\"%.1f\" x2=\"%.1f\" y2=\"%.1f\" stroke=\"#d32f2f\" stroke-width=\"2\"/>\n",
-        x + 7, y4 - s + 3, x + 7, y4 + 3);
+        x + 7, y5 - s + 3, x + 7, y5 + 3);
+    ty = y5 + 1;
     fprintf(f, "  <text x=\"%.1f\" y=\"%.1f\" font-size=\"12\">CPU desligada (evento)</text>\n", x + s + 12, ty);
+    x += 230;
+
+    /* preempcao por quantum: barra vertical laranja */
+    fprintf(f, "  <line x1=\"%.1f\" y1=\"%.1f\" x2=\"%.1f\" y2=\"%.1f\" stroke=\"#ef6c00\" stroke-width=\"3\"/>\n",
+        x + 7, y5 - s + 3, x + 7, y5 + 3);
+    fprintf(f, "  <text x=\"%.1f\" y=\"%.1f\" font-size=\"12\">Preempcao por quantum</text>\n", x + s + 12, ty);
 }
 
 /*
@@ -262,6 +273,11 @@ static void desenhar_eventos(FILE* f, const Simulador* sim, const int* linha,
                     "  <circle cx=\"%.1f\" cy=\"%.1f\" r=\"4\" fill=\"#0288d1\" stroke=\"#ffffff\" stroke-width=\"1\"/>\n",
                     cx, yc);
                 break;
+            case EVT_QUANTUM: /* barra vertical laranja (preempcao por quantum) */
+                fprintf(f,
+                    "  <line x1=\"%.1f\" y1=\"%.1f\" x2=\"%.1f\" y2=\"%.1f\" stroke=\"#ef6c00\" stroke-width=\"3\"/>\n",
+                    cx, ytop, cx, ybot);
+                break;
             default:
                 break;
         }
@@ -294,7 +310,7 @@ int gantt_exportar_svg(const Simulador* sim, const char* caminho) {
     double chart_w = max_tick * cw;
     double row_h = 26.0;               /* altura de uma linha de tarefa */
     double cpu_h = 14.0;               /* altura de uma linha de CPU */
-    double cpu_top = 120.0;             /* topo da faixa de CPUs */
+    double cpu_top = 140.0;             /* topo da faixa de CPUs */
     double task_gap = 10.0;
     double task_top = cpu_top + ncpu * cpu_h + task_gap;
     double task_bottom = task_top + nt * row_h;
@@ -302,7 +318,7 @@ int gantt_exportar_svg(const Simulador* sim, const char* caminho) {
     double svg_h = axis_y + 150.0;
 
     double chart_fim = x0 + chart_w + pad_dir;
-    double svg_w = chart_fim > 760.0 ? chart_fim : 760.0;
+    double svg_w = chart_fim > 840.0 ? chart_fim : 840.0;
 
     /* cabecalho do SVG */
     fprintf(f,

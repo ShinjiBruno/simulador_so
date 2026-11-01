@@ -40,6 +40,8 @@ static void ativar_tarefa(Simulador* sim, int i) {
     t->corrido = 0;
     t->deadline_abs = sim->tick + t->prazo;
     t->perdeu_prazo = 0;
+    t->quantum_cont = 0;
+    t->tempo_fila = sim->tick;
     t->estado = TASK_PRONTO;
     t->cpu = -1;
     t->proxima_ativ = sim->tick + t->periodo;
@@ -111,6 +113,7 @@ static void escalonar(Simulador* sim) {
         // atribui a tarefa a cpu
         sim->tarefas[escolhida].estado = TASK_EXECUTANDO;
         sim->tarefas[escolhida].cpu = c;
+        sim->tarefas[escolhida].quantum_cont = 0;
         sim->cpu_tarefa[c] = escolhida;
         if (sorteio) {
             sim->sorteio_ultimo_tick = 1;
@@ -136,14 +139,16 @@ static void preemptar(Simulador* sim) {
         if (melhor == -1 || melhor == atual) continue;
 
         int cmp = sim->operacoes.algoritmo_compara_prioridade(&sim->tarefas[melhor], &sim->tarefas[atual]);
-        printf("cmp: %d; melhor: %d; atual: %d\n", cmp, melhor, atual);
         if (cmp && cmp != -1) {
             //desaloja atual e coloca melhor
             sim->tarefas[atual].estado = TASK_PRONTO;
             sim->tarefas[atual].cpu = -1;
+            sim->tarefas[atual].quantum_cont = 0;
+            sim->tarefas[atual].tempo_fila = sim->tick;
             sim->cpu_tarefa[c] = melhor;
             sim->tarefas[melhor].estado = TASK_EXECUTANDO;
             sim->tarefas[melhor].cpu = c;
+            sim->tarefas[melhor].quantum_cont = 0;
             if (sorteio) {
                 sim->sorteio_ultimo_tick = 1;
                 registrar_evento(sim, sim->tick, melhor, c, EVT_SORTEIO);
@@ -153,6 +158,8 @@ static void preemptar(Simulador* sim) {
 }
 
 static void executar_um_tick(Simulador* sim) {
+    int quantum = sim->cfg->geral.quantum;
+
     for (int c = 0; c < sim->cfg->geral.qtde_cpus; c++) {
         if (!sim->cpu_ligada[c]) continue;
         int i = sim->cpu_tarefa[c];
@@ -161,18 +168,35 @@ static void executar_um_tick(Simulador* sim) {
         TaskControlBlock* t = &sim->tarefas[i];
         t->restante--;
         t->corrido++;
+        t->quantum_cont++;
 
+        // a tarefa terminou sua duracao neste tick?
         if (t->restante <= 0) {
             t->execucoes++;
             registrar_evento(sim, sim->tick, i, c, EVT_FIM);
             sim->cpu_tarefa[c] = -1;
             t->cpu = -1;
+            t->quantum_cont = 0;
 
             if (t->execucoes >= MAX_EXECUCOES) {
                 t->estado = TASK_FINALIZADO;
             } else {
                 t->estado = TASK_INATIVO; 
             }
+            continue;
+        }
+
+        // preempcao por tempo (quantum): o quantum expirou e a tarefa ainda
+        // tem trabalho a fazer, entao ela volta para a fila de prontos. Isso
+        // vale para QUALQUER algoritmo: e o "tempo compartilhado" do sistema.
+        // (p.ex. FCFS + quantum passa a se comportar como Round-Robin)
+        if (t->quantum_cont >= quantum) {
+            t->estado = TASK_PRONTO;
+            t->cpu = -1;
+            t->quantum_cont = 0;
+            t->tempo_fila = sim->tick; // fim da fila (importante p/ FCFS/RR)
+            sim->cpu_tarefa[c] = -1;
+            registrar_evento(sim, sim->tick, i, c, EVT_QUANTUM);
         }
     }
 }
@@ -242,6 +266,8 @@ int simulador_iniciar(Simulador* sim, Configuracao* cfg) {
         sim->tarefas[i].ativacao_abs = 0;
         sim->tarefas[i].corrido = 0;
         sim->tarefas[i].perdeu_prazo = 0;
+        sim->tarefas[i].quantum_cont = 0;
+        sim->tarefas[i].tempo_fila = cfg->tarefas[i].ingresso;
     }
 
     // inicializa cpus

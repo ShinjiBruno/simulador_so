@@ -79,6 +79,10 @@ int compara_prioridadeEDF(const TaskControlBlock* a, const TaskControlBlock* b){
 }
 
 int compara_prioridadeFCFS(const TaskControlBlock* a, const TaskControlBlock* b){
-    if(a->ativacao_abs == b->ativacao_abs) return -1;
-    return (a->ativacao_abs < b->ativacao_abs);
+    // FCFS ordena por quem entrou primeiro na fila de prontos. O campo
+    // tempo_fila e atualizado a cada (re)colocacao na fila, inclusive na
+    // preempcao por quantum, o que transforma o FCFS em Round-Robin quando o
+    // quantum expira: a tarefa preemptada vai para o fim da fila.
+    if(a->tempo_fila == b->tempo_fila) return -1;
+    return (a->tempo_fila < b->tempo_fila);
 }
